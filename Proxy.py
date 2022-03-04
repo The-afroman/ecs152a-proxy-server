@@ -16,14 +16,15 @@ serverSocket.bind(("", serverPort))
 # Listen to at most 1 connection at a time
 serverSocket.listen(1)
 
+
 # Server should be up and running and listening to the incoming connections
 while True:
+    print('listening on port {}'.format(serverPort))
     print('Ready to serve...')
     
     # Set up a new connection from the client
     connectionSocket, addr = serverSocket.accept()
-    print("Accept Call")
-    
+    print("Accept Call from: {}".format(addr))
     # If an exception occurs during the execution of try clause
     # the rest of the clause is skipped
     # If the exception type matches the word after except
@@ -56,7 +57,7 @@ while True:
         
         # Store the entire contenet of the requested file in a temporary buffer
         outputdata = f.read()
-        print('Read file:{} from cache'.format(filename))
+        print('Read file: {} from cache'.format(str(filename)[1:]))
         # Send the HTTP response header line to the connection socket
         connectionSocket.send("HTTP/1.1 200 OK\r\n\r\n".encode())
         
