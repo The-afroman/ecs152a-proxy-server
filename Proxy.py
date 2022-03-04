@@ -28,23 +28,24 @@ while True:
     # the rest of the clause is skipped
     # If the exception type matches the word after except
     # the except clause is executed
+    # Receives the request message from the client
+    message = b""
+    co = 1
+    while True:
+        data = connectionSocket.recv(1)
+        message += data
+        co += 1
+        if data == b'\r':
+            data = connectionSocket.recv(3)
+            if data == b'\n\r\n':
+                break
+            else:
+                message += data
+        
+    # Check whether the required files exist in the cache
+    # if yes,load the file and send a response back to the client
+    # print('Read file from cache')
     try:
-        # Receives the request message from the client
-        message = b""
-        co = 1
-        while True:
-            data = connectionSocket.recv(1)
-            message += data
-            co += 1
-            if data == b'\r':
-                data = connectionSocket.recv(3)
-                if data == b'\n\r\n':
-                    break
-                else:
-                    message += data
-        # message =  connectionSocket.recv(1024)
-        
-        
         # Extract the path of the requested object from the message
         # The path is the second part of HTTP header, identified by [1]
         filename = message.split()[1]
@@ -55,7 +56,7 @@ while True:
         
         # Store the entire contenet of the requested file in a temporary buffer
         outputdata = f.read()
-        
+        print('Read file:{} from cache'.format(filename))
         # Send the HTTP response header line to the connection socket
         connectionSocket.send("HTTP/1.1 200 OK\r\n\r\n".encode())
         
@@ -66,13 +67,11 @@ while True:
         
         # Close the client connection socket
         connectionSocket.close()
-    
+
     except IOError:
-        # Send HTTP response message for file not found
-        connectionSocket.send("HTTP/1.1 404 Not Found\r\n\r\n".encode())
-        connectionSocket.send("<html><head></head><body><h1>404 Not Found</h1></body></html>\r\n".encode())
-        
-        # Close the client connection socket
+        # the file was not found
+        # retrieve it from the webserver and put it in local storage
+        # Close connection socket
         connectionSocket.close()
 
 serverSocket.close()  
