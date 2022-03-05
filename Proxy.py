@@ -1,8 +1,8 @@
 # Import socket module
 from socket import *
 
-def proxy():
-        # Create a TCP server socket
+def main():
+    # Create a TCP server socket
     #(AF_INET is used for IPv4 protocols)
     #(SOCK_STREAM is used for TCP)
 
@@ -42,6 +42,7 @@ def proxy():
             co += 1
             if data == b'\r':
                 data = connectionSocket.recv(3)
+                if not data: break
                 if data == b'\n\r\n':
                     break
                 else:
@@ -53,8 +54,15 @@ def proxy():
             # Extract the path of the requested object from the message
             # The path is the second part of HTTP header, identified by [1]
             filename = b""
-            for x in message.split()[1].split(b"/")[2:]:
+            message = message.split()[1].split(b"/")
+            for x in message[2:]:
                 filename += x
+            
+            # get server name and port
+            message = message[1].split(b":")
+            webServerName = str(message[0])[2:-1]
+            webServerPort = int(str(message[1])[2:-1])
+            print(webServerName, webServerPort)
 
             # Because the extracted path of the HTTP request includes
             # a character '\', we read the path from the second character
@@ -77,48 +85,59 @@ def proxy():
         except IOError:
             # the file was not found
             # retrieve it from the webserver and put it in local storage
-
-            webServerName = "localhost"
-            webServerPort = 6789
             filename = str(filename)[1:-1]
             request = "GET /{} HTTP/1.1\r\nHost: {}:{}\r\n\r\n".format(str(filename)[1:], webServerName, webServerPort)
             print("Request:",request)
             # create TCP socket on client to use for connecting to remote server.  
             clientSocket = socket(AF_INET, SOCK_STREAM)
             # open the TCP connection
-            clientSocket.connect((webServerName,webServerPort))
-            # perform the http GET request on web server
-            clientSocket.send(request.encode())
-            # retrieve file
-            webServerResp = clientSocket.recv(19)
-            print ("Response: ", webServerResp)
-            if(webServerResp.split()[1] == b"200"):
-                # message = clientSocket.recv(102400)
-                message = b""
-                while True:
-                    data = clientSocket.recv(1)
-                    co += 1
-                    if data == b"\r":
-                        data = clientSocket.recv(1)
-                        if data == b'\n':
-                            break
-                    else:
-                        message += data
-                print(message)
-                connectionSocket.send("""HTTP/1.1 200 OK\r\n Content-Type: text/html\r\n\r\n""".encode())
-                connectionSocket.send(message)
-                connectionSocket.send("\r\n".encode())
-                file = open("cached_"+filename[1:], 'w')
-                file.write(message.decode())
-                file.close()
-            else:
-                connectionSocket.send("HTTP/1.1 404 Not Found\r\n\r\n".encode())
-                connectionSocket.send("<html><head></head><body><h1>404 Not Found</h1></body></html>\r\n".encode())
-            # close the TCP connection
-            connectionSocket.close()
+            try:
+                clientSocket.connect((webServerName,webServerPort))
 
-def main():
-    proxy()
+                # perform the http GET request on web server
+                clientSocket.send(request.encode())
+                # retrieve file
+                webServerResp = b""
+                while True:
+                        data = clientSocket.recv(1)
+                        if not data: break
+                        if data == b"\r":
+                            data = clientSocket.recv(3)
+                            if data == b"\n\r\n":
+                                break
+                            else:
+                                webServerResp += data
+                        else:
+                            webServerResp += data
+                # webServerResp = clientSocket.recv(19)
+                print ("Response: ", webServerResp)
+                if(webServerResp.split()[1] == b"200"):
+                    # message = clientSocket.recv(102400)
+                    message = b""
+                    data = b""
+                    while True:
+                        data = clientSocket.recv(1)
+                        if not data: break
+                        if data == b"\r":
+                            data = clientSocket.recv(1)
+                            if data == b'\n':
+                                break
+                        else:
+                            message += data
+                    print(message)
+                    connectionSocket.send("""HTTP/1.1 200 OK\r\n Content-Type: text/html\r\n\r\n""".encode())
+                    connectionSocket.send(message)
+                    connectionSocket.send("\r\n".encode())
+                    file = open("cached_"+filename[1:], 'w')
+                    file.write(message.decode())
+                    file.close()
+                else:
+                    connectionSocket.send("HTTP/1.1 404 Not Found\r\n\r\n".encode())
+                    connectionSocket.send("<html><head></head><body><h1>404 Not Found</h1></body></html>\r\n".encode())
+                # close the TCP connection
+            except:
+                clientSocket.close()
+            connectionSocket.close()
 
 if __name__ == '__main__':
     main()
