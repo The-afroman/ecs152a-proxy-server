@@ -79,7 +79,6 @@ def proxy():
         except IOError:
             # the file was not found
             # retrieve it from the webserver and put it in local storage
-            # Close connection socket
 
             webServerName = "localhost"
             webServerPort = 6789
@@ -96,19 +95,24 @@ def proxy():
             webServerResp = clientSocket.recv(19)
             print ("Response: ", webServerResp)
             if(webServerResp.split()[1] == b"200"):
-               webServerResp = clientSocket.recv(19)
-            
-            message = clientSocket.recv(20480)
-            print(message)
-            connectionSocket.send("""HTTP/1.1 200 OK
-Content-Type: text/html
-
-""".encode())
-            connectionSocket.send(message)
+                # message = clientSocket.recv(102400)
+                message = b""
+                while True:
+                    data = clientSocket.recv(1)
+                    co += 1
+                    if data == b"\r":
+                        data = clientSocket.recv(1)
+                        if data == b'\n':
+                            break
+                    else:
+                        message += data
+                print(message)
+                connectionSocket.send("""HTTP/1.1 200 OK\r\n Content-Type: text/html\r\n\r\n""".encode())
+                connectionSocket.send(message)
+                connectionSocket.send("\r\n".encode())
             # connectionSocket.send(message.encode())
             # connectionSocket.send("\r\n".encode())
             # close the TCP connection
-            clientSocket.close()
             connectionSocket.close()
 
 def main():
