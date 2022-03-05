@@ -120,21 +120,20 @@ def main():
                 print("Response: ", webServerResp.decode("utf-8"))
                 # check status if not 200 OK then don't continue
                 if(webServerResp.split()[1] == b"200"):
+                    # send HTTP header to client
+                    connectionSocket.send(
+                        """HTTP/1.1 200 OK\r\n Content-Type: text/html\r\n\r\n""".encode())
+                    connectionSocket.send("\r\n".encode())
                     # get document from webserver
                     message = b""
                     while True:
                         data = clientSocket.recv(1)
                         if not data:
                             break
-                        message += data
+                        # send the document to client
+                        connectionSocket.send(data)
                         print(data.decode("utf-8"), end='')
                     print("\n", end='')
-                    # send HTTP header to client
-                    connectionSocket.send(
-                        """HTTP/1.1 200 OK\r\n Content-Type: text/html\r\n\r\n""".encode())
-                    # send the document to client
-                    connectionSocket.send(message)
-                    connectionSocket.send("\r\n".encode())
                     # cache the document in local storage
                     file = open("cached_"+filename[1:], 'w')
                     file.write(message.decode())
