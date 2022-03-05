@@ -1,6 +1,5 @@
 # Import socket module
 from socket import *
-from urllib import request
 
 def proxy():
         # Create a TCP server socket
@@ -112,14 +111,14 @@ def proxy():
                 file = open("cached_"+filename[1:], 'w')
                 file.write(message.decode())
                 file.close()
-            # connectionSocket.send(message.encode())
-            # connectionSocket.send("\r\n".encode())
+            else:
+                connectionSocket.send("HTTP/1.1 404 Not Found\r\n\r\n".encode())
+                connectionSocket.send("<html><head></head><body><h1>404 Not Found</h1></body></html>\r\n".encode())
             # close the TCP connection
             connectionSocket.close()
 
 def main():
     proxy()
-
 
 if __name__ == '__main__':
     main()
