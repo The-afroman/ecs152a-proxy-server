@@ -60,7 +60,7 @@ def proxy():
             print(filename)
             # Because the extracted path of the HTTP request includes
             # a character '\', we read the path from the second character
-            f = open(filename[1:])
+            f = open(filename)
             
             # Store the entire contenet of the requested file in a temporary buffer
             outputdata = f.read()
@@ -93,10 +93,15 @@ def proxy():
             # perform the http GET request on web server
             clientSocket.send(request.encode())
             # retrieve file
-            webServerResp = clientSocket.recv(1024)
+            webServerResp = clientSocket.recv(19)
             print ("Response: ", webServerResp)
+            if(webServerResp.split()[1] == b"200"):
+               webServerResp = clientSocket.recv(19)
             
+            message = clientSocket.recv(20480)
+            print(message)
             connectionSocket.send(webServerResp)
+            connectionSocket.send(message)
             # close the TCP connection
             clientSocket.close()
             connectionSocket.close()
