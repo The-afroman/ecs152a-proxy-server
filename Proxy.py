@@ -91,7 +91,7 @@ def main():
             filename = str(filename)[1:-1]
             request = "GET /{} HTTP/1.1\r\nHost: {}:{}\r\n\r\n".format(
                 str(filename)[1:], webServerName, webServerPort)
-            print("Request:", request.decode("utf-8"))
+            print("Request:", request)
             # create TCP socket on client to use for connecting to remote server.
             clientSocket = socket(AF_INET, SOCK_STREAM)
             # open the TCP connection
@@ -127,7 +127,8 @@ def main():
                         if not data:
                             break
                         message += data
-                        print(data.decode("utf-8") , end='')
+                        print(data.decode("utf-8"), end='')
+                    print("\n", end='')
                     # send HTTP header to client
                     connectionSocket.send(
                         """HTTP/1.1 200 OK\r\n Content-Type: text/html\r\n\r\n""".encode())
