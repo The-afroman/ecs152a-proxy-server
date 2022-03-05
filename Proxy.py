@@ -57,14 +57,13 @@ def proxy():
             for x in message.split()[1].split(b"/")[2:]:
                 filename += x
 
-            print(filename)
             # Because the extracted path of the HTTP request includes
             # a character '\', we read the path from the second character
-            f = open(filename)
+            f = open(b"cached_"+filename)
             
             # Store the entire contenet of the requested file in a temporary buffer
             outputdata = f.read()
-            print('Read file: {} from cache'.format(str(filename)[1:]))
+            print('Read file: {} from cache'.format(str(b"cached_"+filename)[1:]))
             # Send the HTTP response header line to the connection socket
             connectionSocket.send("HTTP/1.1 200 OK\r\n\r\n".encode())
             
@@ -110,6 +109,9 @@ def proxy():
                 connectionSocket.send("""HTTP/1.1 200 OK\r\n Content-Type: text/html\r\n\r\n""".encode())
                 connectionSocket.send(message)
                 connectionSocket.send("\r\n".encode())
+                file = open("cached_"+filename[1:], 'w')
+                file.write(message.decode())
+                file.close()
             # connectionSocket.send(message.encode())
             # connectionSocket.send("\r\n".encode())
             # close the TCP connection
