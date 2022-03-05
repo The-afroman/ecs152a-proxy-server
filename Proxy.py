@@ -73,7 +73,7 @@ def main():
             # Store the entire contenet of the requested file in a temporary buffer
             outputdata = f.read()
             print('Read file: {} from cache'.format(
-                str(b"cached_"+filename)[1:]))
+                str(b"cached_"+filename)[1:]), "\n")
             # Send the HTTP response header line to the connection socket
             connectionSocket.send("HTTP/1.1 200 OK\r\n\r\n".encode())
 
@@ -139,13 +139,14 @@ def main():
                     file = open("cached_"+filename[1:], 'w')
                     file.write(message.decode())
                     file.close()
+                    print("cached_"+filename[1:], "written to cache\n")
                 else:
                     # error not found or other error, unable to retrieve file from destination
                     connectionSocket.send(
                         "HTTP/1.1 404 Not Found\r\n\r\n".encode())
                     connectionSocket.send(
                         "<html><head></head><body><h1>404 Not Found</h1></body></html>\r\n".encode())
-                
+
             except:
                 # close the TCP webserver connection
                 clientSocket.close()
