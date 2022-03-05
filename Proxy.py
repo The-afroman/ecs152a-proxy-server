@@ -100,8 +100,13 @@ def proxy():
             
             message = clientSocket.recv(20480)
             print(message)
-            connectionSocket.send(webServerResp)
+            connectionSocket.send("""HTTP/1.1 200 OK
+Content-Type: text/html
+
+""".encode())
             connectionSocket.send(message)
+            # connectionSocket.send(message.encode())
+            # connectionSocket.send("\r\n".encode())
             # close the TCP connection
             clientSocket.close()
             connectionSocket.close()
