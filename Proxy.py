@@ -123,7 +123,6 @@ def main():
                     # send HTTP header to client
                     connectionSocket.send(
                         """HTTP/1.1 200 OK\r\n Content-Type: text/html\r\n\r\n""".encode())
-                    connectionSocket.send("\r\n".encode())
                     # get document from webserver
                     message = b""
                     while True:
@@ -134,6 +133,7 @@ def main():
                         connectionSocket.send(data)
                         print(data.decode("utf-8"), end='')
                         message+=data
+                    connectionSocket.send("\r\n".encode())
                     print("\n", end='')
                     # cache the document in local storage
                     file = open("cached_"+filename[1:], 'w')
