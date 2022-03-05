@@ -117,7 +117,7 @@ def main():
                     else:
                         webServerResp += data
 
-                print("Response: ", webServerResp)
+                print("Response: ", webServerResp.decode("utf-8"))
                 # check status if not 200 OK then don't continue
                 if(webServerResp.split()[1] == b"200"):
                     # get document from webserver
@@ -127,7 +127,7 @@ def main():
                         if not data:
                             break
                         message += data
-                        print(data, end='')
+                        print(data.decode("utf-8") , end='')
                     # send HTTP header to client
                     connectionSocket.send(
                         """HTTP/1.1 200 OK\r\n Content-Type: text/html\r\n\r\n""".encode())
