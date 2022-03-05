@@ -35,11 +35,9 @@ def main():
         # the except clause is executed
         # Receives the request message from the client
         message = b""
-        co = 1
         while True:
             data = connectionSocket.recv(1)
             message += data
-            co += 1
             if data == b'\r':
                 data = connectionSocket.recv(3)
                 if not data: break
@@ -102,8 +100,10 @@ def main():
                         data = clientSocket.recv(1)
                         if not data: break
                         if data == b"\r":
+                            webServerResp += data
                             data = clientSocket.recv(3)
                             if data == b"\n\r\n":
+                                webServerResp += data
                                 break
                             else:
                                 webServerResp += data
@@ -114,16 +114,10 @@ def main():
                 if(webServerResp.split()[1] == b"200"):
                     # message = clientSocket.recv(102400)
                     message = b""
-                    data = b""
                     while True:
                         data = clientSocket.recv(1)
                         if not data: break
-                        if data == b"\r":
-                            data = clientSocket.recv(1)
-                            if data == b'\n':
-                                break
-                        else:
-                            message += data
+                        message += data
                     print(message)
                     connectionSocket.send("""HTTP/1.1 200 OK\r\n Content-Type: text/html\r\n\r\n""".encode())
                     connectionSocket.send(message)
