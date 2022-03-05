@@ -133,6 +133,7 @@ def main():
                         # send the document to client
                         connectionSocket.send(data)
                         print(data.decode("utf-8"), end='')
+                        message+=data
                     print("\n", end='')
                     # cache the document in local storage
                     file = open("cached_"+filename[1:], 'w')
