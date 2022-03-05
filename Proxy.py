@@ -1,10 +1,11 @@
 # Import socket module
 from socket import *
 
+
 def main():
     # Create a TCP server socket
-    #(AF_INET is used for IPv4 protocols)
-    #(SOCK_STREAM is used for TCP)
+    # (AF_INET is used for IPv4 protocols)
+    # (SOCK_STREAM is used for TCP)
 
     serverSocket = socket(AF_INET, SOCK_STREAM)
 
@@ -13,11 +14,13 @@ def main():
 
     # Bind the socket to server address and server port
     while(True):
+        # try to bind socket to port
         try:
             serverSocket.bind(("", serverPort))
             break
         except:
-            serverPort+=1
+            # increment port and try again
+            serverPort += 1
             continue
     # Listen to at most 1 connection at a time
     serverSocket.listen(1)
@@ -40,7 +43,8 @@ def main():
             message += data
             if data == b'\r':
                 data = connectionSocket.recv(3)
-                if not data: break
+                if not data:
+                    break
                 if data == b'\n\r\n':
                     break
                 else:
@@ -55,7 +59,7 @@ def main():
             message = message.split()[1].split(b"/")
             for x in message[2:]:
                 filename += x
-            
+
             # get server name and port
             message = message[1].split(b":")
             webServerName = str(message[0])[2:-1]
@@ -65,18 +69,19 @@ def main():
             # Because the extracted path of the HTTP request includes
             # a character '\', we read the path from the second character
             f = open(b"cached_"+filename)
-            
+
             # Store the entire contenet of the requested file in a temporary buffer
             outputdata = f.read()
-            print('Read file: {} from cache'.format(str(b"cached_"+filename)[1:]))
+            print('Read file: {} from cache'.format(
+                str(b"cached_"+filename)[1:]))
             # Send the HTTP response header line to the connection socket
             connectionSocket.send("HTTP/1.1 200 OK\r\n\r\n".encode())
-            
+
             # Send the content of the requested file to the connection socket
             for i in range(0, len(outputdata)):
                 connectionSocket.send(outputdata[i].encode())
             connectionSocket.send("\r\n".encode())
-            
+
             # Close the client connection socket
             connectionSocket.close()
 
@@ -84,55 +89,68 @@ def main():
             # the file was not found
             # retrieve it from the webserver and put it in local storage
             filename = str(filename)[1:-1]
-            request = "GET /{} HTTP/1.1\r\nHost: {}:{}\r\n\r\n".format(str(filename)[1:], webServerName, webServerPort)
-            print("Request:",request)
-            # create TCP socket on client to use for connecting to remote server.  
+            request = "GET /{} HTTP/1.1\r\nHost: {}:{}\r\n\r\n".format(
+                str(filename)[1:], webServerName, webServerPort)
+            print("Request:", request.decode("utf-8"))
+            # create TCP socket on client to use for connecting to remote server.
             clientSocket = socket(AF_INET, SOCK_STREAM)
             # open the TCP connection
             try:
-                clientSocket.connect((webServerName,webServerPort))
-
+                # connect to webserver
+                clientSocket.connect((webServerName, webServerPort))
                 # perform the http GET request on web server
                 clientSocket.send(request.encode())
-                # retrieve file
+                # get response header
                 webServerResp = b""
                 while True:
-                        data = clientSocket.recv(1)
-                        if not data: break
-                        if data == b"\r":
+                    data = clientSocket.recv(1)
+                    if not data:
+                        break
+                    if data == b"\r":
+                        webServerResp += data
+                        data = clientSocket.recv(3)
+                        if data == b"\n\r\n":
                             webServerResp += data
-                            data = clientSocket.recv(3)
-                            if data == b"\n\r\n":
-                                webServerResp += data
-                                break
-                            else:
-                                webServerResp += data
+                            break
                         else:
                             webServerResp += data
-                # webServerResp = clientSocket.recv(19)
-                print ("Response: ", webServerResp)
+                    else:
+                        webServerResp += data
+
+                print("Response: ", webServerResp)
+                # check status if not 200 OK then don't continue
                 if(webServerResp.split()[1] == b"200"):
-                    # message = clientSocket.recv(102400)
+                    # get document from webserver
                     message = b""
                     while True:
                         data = clientSocket.recv(1)
-                        if not data: break
+                        if not data:
+                            break
                         message += data
-                    print(message)
-                    connectionSocket.send("""HTTP/1.1 200 OK\r\n Content-Type: text/html\r\n\r\n""".encode())
+                        print(data, end='')
+                    # send HTTP header to client
+                    connectionSocket.send(
+                        """HTTP/1.1 200 OK\r\n Content-Type: text/html\r\n\r\n""".encode())
+                    # send the document to client
                     connectionSocket.send(message)
                     connectionSocket.send("\r\n".encode())
+                    # cache the document in local storage
                     file = open("cached_"+filename[1:], 'w')
                     file.write(message.decode())
                     file.close()
                 else:
-                    connectionSocket.send("HTTP/1.1 404 Not Found\r\n\r\n".encode())
-                    connectionSocket.send("<html><head></head><body><h1>404 Not Found</h1></body></html>\r\n".encode())
-                # close the TCP connection
+                    # error not found or other error, unable to retrieve file from destination
+                    connectionSocket.send(
+                        "HTTP/1.1 404 Not Found\r\n\r\n".encode())
+                    connectionSocket.send(
+                        "<html><head></head><body><h1>404 Not Found</h1></body></html>\r\n".encode())
+                
             except:
+                # close the TCP webserver connection
                 clientSocket.close()
+            # close the TCP connection
             connectionSocket.close()
+
 
 if __name__ == '__main__':
     main()
-
