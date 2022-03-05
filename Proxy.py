@@ -63,17 +63,19 @@ def main():
             # get server name and port
             message = message[1].split(b":")
             webServerName = str(message[0])[2:-1]
-            webServerPort = int(str(message[1])[2:-1])
+            if len(message) > 1 :
+                webServerPort = int(str(message[1])[2:-1])
+            else:
+                webServerPort = 80
             print(webServerName, webServerPort)
 
             # Because the extracted path of the HTTP request includes
             # a character '\', we read the path from the second character
-            f = open(b"cached_"+filename)
+            f = open("cached_{}_{}".format(webServerName,filename.decode()))
 
             # Store the entire contenet of the requested file in a temporary buffer
             outputdata = f.read()
-            print('Read file: {} from cache'.format(
-                str(b"cached_"+filename)[1:]), "\n")
+            print("Read file:", f.name)
             # Send the HTTP response header line to the connection socket
             connectionSocket.send("HTTP/1.1 200 OK\r\n\r\n".encode())
 
@@ -136,10 +138,10 @@ def main():
                     connectionSocket.send("\r\n".encode())
                     print("\n", end='')
                     # cache the document in local storage
-                    file = open("cached_"+filename[1:], 'w')
+                    file = open("cached_{}_{}".format(webServerName,filename[1:]), 'w')
                     file.write(message.decode())
                     file.close()
-                    print("cached_"+filename[1:], "written to cache\n")
+                    print("cached_{}_{} written to cache\n".format(webServerName,filename[1:]))
                 else:
                     # error not found or other error, unable to retrieve file from destination
                     connectionSocket.send(
