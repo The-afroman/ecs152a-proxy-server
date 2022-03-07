@@ -6,7 +6,6 @@ def main():
     # Create a TCP server socket
     # (AF_INET is used for IPv4 protocols)
     # (SOCK_STREAM is used for TCP)
-
     serverSocket = socket(AF_INET, SOCK_STREAM)
 
     # Assign a port number
@@ -56,22 +55,29 @@ def main():
             # Extract the path of the requested object from the message
             # The path is the second part of HTTP header, identified by [1]
             filename = b""
-            message = message.split()[1].split(b"/")
-            for x in message[2:]:
+            message_path = b""
+            message = message.split()[1]
+            message_file = message.split(b"/")
+            for x in message_file[2:]:
+                filename += b"_"
                 filename += x
+                message_path+=b"/"
+                message_path+=x
+            if message_path == b"" : message_path = b"/"
 
             # get server name and port
-            message = message[1].split(b":")
-            webServerName = str(message[0])[2:-1]
-            if len(message) > 1 :
-                webServerPort = int(str(message[1])[2:-1])
+            message_path = message_path.split(b":")[0]
+            message_file = message_file[1].split(b":")
+            webServerName = str(message_file[0])[2:-1]
+            if len(message_file) > 1:
+                webServerPort = int(str(message_file[1])[2:-1])
             else:
                 webServerPort = 80
             print(webServerName, webServerPort)
 
             # Because the extracted path of the HTTP request includes
             # a character '\', we read the path from the second character
-            f = open("cached_{}_{}".format(webServerName,filename.decode()))
+            f = open("cached_{}{}".format(webServerName, filename.decode()))
 
             # Store the entire contenet of the requested file in a temporary buffer
             outputdata = f.read()
@@ -91,8 +97,8 @@ def main():
             # the file was not found
             # retrieve it from the webserver and put it in local storage
             filename = str(filename)[1:-1]
-            request = "GET /{} HTTP/1.1\r\nHost: {}:{}\r\n\r\n".format(
-                str(filename)[1:], webServerName, webServerPort)
+            request = "GET {} HTTP/1.1\r\nHost: {}:{}\r\n\r\n".format(
+                message_path.decode(), webServerName, webServerPort)
             print("Request:", request)
             # create TCP socket on client to use for connecting to remote server.
             clientSocket = socket(AF_INET, SOCK_STREAM)
@@ -128,20 +134,22 @@ def main():
                     # get document from webserver
                     message = b""
                     while True:
-                        data = clientSocket.recv(1)
+                        data = clientSocket.recv(1024)
                         if not data:
                             break
                         # send the document to client
                         connectionSocket.send(data)
                         print(data.decode("utf-8"), end='')
-                        message+=data
+                        message += data
                     connectionSocket.send("\r\n".encode())
                     print("\n", end='')
                     # cache the document in local storage
-                    file = open("cached_{}_{}".format(webServerName,filename[1:]), 'w')
+                    file = open("cached_{}{}".format(
+                        webServerName, filename[1:]), 'w')
                     file.write(message.decode())
                     file.close()
-                    print("cached_{}_{} written to cache\n".format(webServerName,filename[1:]))
+                    print("cached_{}{} written to cache\n".format(
+                        webServerName, filename[1:]))
                 else:
                     # error not found or other error, unable to retrieve file from destination
                     connectionSocket.send(
